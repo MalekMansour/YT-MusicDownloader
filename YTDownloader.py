@@ -59,9 +59,8 @@ def select_cover():
             text=f"Selected Cover:\n{os.path.basename(file)}"
         )
 
-# --------------------------------
-# DOWNLOAD MUSIC
-# --------------------------------
+# Download Music
+
 def download_music():
 
     global cover_path
@@ -113,9 +112,6 @@ def download_music():
 
             root.update()
 
-            # --------------------------------
-            # GET VIDEO INFO
-            # --------------------------------
             with YoutubeDL({
                 'noplaylist': True,
                 'quiet': True,
@@ -135,10 +131,7 @@ def download_music():
                 download_folder,
                 clean_title + ".%(ext)s"
             )
-
-            # --------------------------------
-            # DOWNLOAD SETTINGS
-            # --------------------------------
+            
             ydl_opts = {
 
                 'format': 'bestaudio/best',
@@ -158,9 +151,6 @@ def download_music():
                 }],
             }
 
-            # --------------------------------
-            # DOWNLOAD SONG
-            # --------------------------------
             with YoutubeDL(ydl_opts) as ydl:
                 ydl.download([link])
 
@@ -174,9 +164,6 @@ def download_music():
                 clean_title + "_cover.mp3"
             )
 
-            # --------------------------------
-            # EMBED COVER ART
-            # --------------------------------
             command = [
                 FFMPEG_EXE,
                 "-y",
@@ -199,9 +186,6 @@ def download_music():
                 stderr=subprocess.DEVNULL
             )
 
-            # --------------------------------
-            # REPLACE OLD FILE
-            # --------------------------------
             if os.path.exists(temp_output):
 
                 os.remove(mp3_file)
@@ -229,9 +213,7 @@ def download_music():
             str(e)
         )
 
-# --------------------------------
 # GUI
-# --------------------------------
 root = tk.Tk()
 
 root.title("YouTube Music Downloader")
@@ -239,9 +221,6 @@ root.geometry("1000x1000")
 root.configure(bg=BG)
 root.resizable(True, True)
 
-# --------------------------------
-# MAIN CARD
-# --------------------------------
 main_frame = tk.Frame(
     root,
     bg=CARD,
@@ -255,16 +234,12 @@ main_frame.place(
     anchor="center"
 )
 
-# --------------------------------
-# LOGO
-# --------------------------------
 logo_path = "logo.png"
 
 if os.path.exists(logo_path):
 
     logo_image = tk.PhotoImage(file=logo_path)
 
-    # MAKE LOGO SMALLER
     logo_image = logo_image.subsample(5, 5)
 
     logo_label = tk.Label(
@@ -275,9 +250,6 @@ if os.path.exists(logo_path):
 
     logo_label.pack(pady=(0, 1))
 
-# --------------------------------
-# TITLE
-# --------------------------------
 title_label = tk.Label(
     main_frame,
     text="YouTube Music Downloader",
@@ -288,9 +260,6 @@ title_label = tk.Label(
 
 title_label.pack()
 
-# --------------------------------
-# SUBTITLE
-# --------------------------------
 subtitle = tk.Label(
     main_frame,
     text="Paste YouTube links and automatically embed custom album art",
@@ -301,9 +270,6 @@ subtitle = tk.Label(
 
 subtitle.pack(pady=(0, 20))
 
-# --------------------------------
-# TEXTBOX
-# --------------------------------
 url_text = tk.Text(
     main_frame,
     width=80,
@@ -319,9 +285,6 @@ url_text = tk.Text(
 
 url_text.pack(pady=10)
 
-# --------------------------------
-# BUTTON STYLE
-# --------------------------------
 def create_button(text, command):
 
     btn = tk.Button(
@@ -345,9 +308,6 @@ def create_button(text, command):
 
     return btn
 
-# --------------------------------
-# COVER BUTTON
-# --------------------------------
 cover_button = create_button(
     "Select Cover Art",
     select_cover
@@ -355,9 +315,6 @@ cover_button = create_button(
 
 cover_button.pack(pady=(15, 8))
 
-# --------------------------------
-# COVER LABEL
-# --------------------------------
 cover_label = tk.Label(
     main_frame,
     text="No cover selected",
@@ -368,9 +325,8 @@ cover_label = tk.Label(
 
 cover_label.pack(pady=(0, 15))
 
-# --------------------------------
-# DOWNLOAD BUTTON
-# --------------------------------
+
+# Download Button
 download_button = create_button(
     "Download All",
     download_music
@@ -378,9 +334,6 @@ download_button = create_button(
 
 download_button.pack(pady=10)
 
-# --------------------------------
-# STATUS LABEL
-# --------------------------------
 status_label = tk.Label(
     main_frame,
     text="",
@@ -391,7 +344,4 @@ status_label = tk.Label(
 
 status_label.pack(pady=(20, 0))
 
-# --------------------------------
-# RUN APP
-# --------------------------------
 root.mainloop()
