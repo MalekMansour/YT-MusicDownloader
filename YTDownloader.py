@@ -14,9 +14,7 @@ FFMPEG_EXE = os.path.join(
     "ffmpeg.exe"
 )
 
-# --------------------------------
-# COLORS
-# --------------------------------
+# Colors
 BG = "#120707"
 CARD = "#1b0b0b"
 RED = "#8b0000"
@@ -25,9 +23,7 @@ TEXT = "#ffffff"
 SUBTEXT = "#c9b3b3"
 BOX = "#2a1111"
 
-# --------------------------------
-# CLEAN FILE NAMES
-# --------------------------------
+# Clean File Name
 def clean_filename(name):
 
     name = re.sub(r'[\[\]\(\)\{\}]', '', name)
@@ -38,18 +34,14 @@ def clean_filename(name):
 
     return name
 
-# --------------------------------
-# HOVER EFFECTS
-# --------------------------------
+# Hover Effect
 def on_enter(e):
     e.widget['background'] = HOVER
 
 def on_leave(e):
     e.widget['background'] = RED
 
-# --------------------------------
-# SELECT COVER ART
-# --------------------------------
+# Cover Art
 def select_cover():
 
     global cover_path
