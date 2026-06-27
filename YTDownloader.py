@@ -5,16 +5,21 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from yt_dlp import YoutubeDL
 
+# --------------------------------
+# GLOBALS
+# --------------------------------
 cover_path = ""
+local_files = [] # Added to track local audio files
 
+# --------------------------------
+# FFMPEG PATH
+# --------------------------------
 FFMPEG_FOLDER = r'C:\Users\Malek\Downloads\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin'
+FFMPEG_EXE = os.path.join(FFMPEG_FOLDER, "ffmpeg.exe")
 
-FFMPEG_EXE = os.path.join(
-    FFMPEG_FOLDER,
-    "ffmpeg.exe"
-)
-
-# Colors
+# --------------------------------
+# COLORS & STYLING (Same as yours)
+# --------------------------------
 BG = "#120707"
 CARD = "#1b0b0b"
 RED = "#8b0000"
@@ -23,325 +28,139 @@ TEXT = "#ffffff"
 SUBTEXT = "#c9b3b3"
 BOX = "#2a1111"
 
-# Clean File Name
+# --------------------------------
+# HELPERS
+# --------------------------------
 def clean_filename(name):
-
     name = re.sub(r'[\[\]\(\)\{\}]', '', name)
     name = re.sub(r'[^a-zA-Z0-9\s-]', '', name)
     name = name.replace(" ", "-")
     name = re.sub(r'-+', '-', name)
-    name = name.strip("-")
+    return name.strip("-")
 
-    return name
+def apply_cover_to_file(input_file, cover_art, output_folder):
+    """Reusable logic to embed art using FFmpeg."""
+    filename = os.path.basename(input_file)
+    output_path = os.path.join(output_folder, f"Art_{filename}")
+    
+    command = [
+        FFMPEG_EXE, "-y",
+        "-i", input_file,
+        "-i", cover_art,
+        "-map", "0:a", "-map", "1:v",
+        "-c:a", "copy", # Using copy is faster if original is mp3
+        "-c:v", "mjpeg",
+        "-id3v2_version", "3",
+        "-metadata:s:v", "title=Album cover",
+        "-metadata:s:v", "comment=Cover (front)",
+        output_path
+    ]
+    
+    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return output_path
 
-# Hover Effect
-def on_enter(e):
-    e.widget['background'] = HOVER
-
-def on_leave(e):
-    e.widget['background'] = RED
-
-# Cover Art
+# --------------------------------
+# GUI ACTIONS
+# --------------------------------
 def select_cover():
-
     global cover_path
-
-    file = filedialog.askopenfilename(
-        title="Choose Cover Art",
-        filetypes=[("Images", "*.jpg *.jpeg *.png *.webp *.bmp")]
-    )
-
+    file = filedialog.askopenfilename(title="Choose Cover Art", filetypes=[("Images", "*.jpg *.jpeg *.png *.webp *.bmp")])
     if file:
-
         cover_path = file
+        cover_label.config(text=f"Cover: {os.path.basename(file)}")
 
-        cover_label.config(
-            text=f"Selected Cover:\n{os.path.basename(file)}"
-        )
+def add_local_files():
+    global local_files
+    files = filedialog.askopenfilenames(title="Select Audio Files", filetypes=[("Audio Files", "*.mp3 *.wav")])
+    if files:
+        local_files.extend(list(files))
+        files_label.config(text=f"{len(local_files)} files queued")
 
-# Download Music
-
-def download_music():
-
-    global cover_path
-
-    text = url_text.get("1.0", tk.END).strip()
-
-    if not text:
-
-        messagebox.showerror(
-            "Error",
-            "Please paste at least one YouTube link."
-        )
-
-        return
-
+def process_queue():
+    global cover_path, local_files
+    
+    links = url_text.get("1.0", tk.END).strip().splitlines()
+    
     if not cover_path:
-
-        messagebox.showerror(
-            "Error",
-            "Please select cover art first."
-        )
-
+        messagebox.showerror("Error", "Please select cover art first.")
         return
 
-    links = text.splitlines()
+    if not links and not local_files:
+        messagebox.showerror("Error", "Nothing to process!")
+        return
 
-    download_folder = os.path.join(
-        os.path.expanduser("~"),
-        "Downloads",
-        "Downloaded Music"
-    )
+    output_dir = os.path.join(os.path.expanduser("~"), "Downloads", "Processed_Music")
+    os.makedirs(output_dir, exist_ok=True)
 
-    os.makedirs(download_folder, exist_ok=True)
-
-    downloaded_count = 0
-
-    try:
-
-        for link in links:
-
-            link = link.strip()
-
-            if not link:
-                continue
-
-            status_label.config(
-                text=f"Downloading...\n{link}"
-            )
-
-            root.update()
-
-            with YoutubeDL({
-                'noplaylist': True,
-                'quiet': True,
-                'ffmpeg_location': FFMPEG_FOLDER
-            }) as ydl:
-
-                info = ydl.extract_info(
-                    link,
-                    download=False
-                )
-
-            title = info.get("title", "Unknown Song")
-
-            clean_title = clean_filename(title)
-
-            output_template = os.path.join(
-                download_folder,
-                clean_title + ".%(ext)s"
-            )
+    # 1. Process YouTube Links
+    for link in links:
+        link = link.strip()
+        if not link: continue
+        
+        status_label.config(text=f"Downloading: {link[:30]}...")
+        root.update()
+        
+        # Enforce single-video mode during metadata extraction
+        with YoutubeDL({'noplaylist': True, 'extract_flat': 'in_playlist', 'quiet': True, 'ffmpeg_location': FFMPEG_FOLDER}) as ydl:
+            info = ydl.extract_info(link, download=False)
+            title = clean_filename(info.get("title", "Song"))
             
-            ydl_opts = {
+        # Enforce single-video mode during download process
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': os.path.join(output_dir, f"{title}.%(ext)s"),
+            'ffmpeg_location': FFMPEG_FOLDER,
+            'noplaylist': True,
+            'extract_flat': 'in_playlist',
+            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '320'}]
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([link])
+            
+        apply_cover_to_file(os.path.join(output_dir, f"{title}.mp3"), cover_path, output_dir)
 
-                'format': 'bestaudio/best',
+    # 2. Process Local Files
+    for file_path in local_files:
+        status_label.config(text=f"Processing: {os.path.basename(file_path)}")
+        root.update()
+        apply_cover_to_file(file_path, cover_path, output_dir)
 
-                'outtmpl': output_template,
+    status_label.config(text="Finished!")
+    messagebox.showinfo("Success", f"All files processed in:\n{output_dir}")
+    # Reset queue
+    local_files = []
+    files_label.config(text="0 local files queued")
 
-                'ffmpeg_location': FFMPEG_FOLDER,
-
-                'noplaylist': True,
-
-                'quiet': False,
-
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '320',
-                }],
-            }
-
-            with YoutubeDL(ydl_opts) as ydl:
-                ydl.download([link])
-
-            mp3_file = os.path.join(
-                download_folder,
-                clean_title + ".mp3"
-            )
-
-            temp_output = os.path.join(
-                download_folder,
-                clean_title + "_cover.mp3"
-            )
-
-            command = [
-                FFMPEG_EXE,
-                "-y",
-                "-i", mp3_file,
-                "-i", cover_path,
-                "-map", "0:a",
-                "-map", "1:v",
-                "-c:a", "libmp3lame",
-                "-b:a", "320k",
-                "-c:v", "mjpeg",
-                "-id3v2_version", "3",
-                "-metadata:s:v", "title=Album cover",
-                "-metadata:s:v", "comment=Cover (front)",
-                temp_output
-            ]
-
-            subprocess.run(
-                command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-
-            if os.path.exists(temp_output):
-
-                os.remove(mp3_file)
-
-                os.rename(
-                    temp_output,
-                    mp3_file
-                )
-
-            downloaded_count += 1
-
-        status_label.config(
-            text="Finished downloading!"
-        )
-
-        messagebox.showinfo(
-            "Success",
-            f"Downloaded {downloaded_count} song(s) successfully!\n\nSaved in:\n{download_folder}"
-        )
-
-    except Exception as e:
-
-        messagebox.showerror(
-            "Error",
-            str(e)
-        )
-
-# GUI
+# --------------------------------
+# GUI SETUP
+# --------------------------------
 root = tk.Tk()
-
-root.title("YouTube Music Downloader")
-root.geometry("1000x1000")
+root.title("Music Processor")
+root.geometry("600x700")
 root.configure(bg=BG)
-root.resizable(True, True)
 
-main_frame = tk.Frame(
-    root,
-    bg=CARD,
-    padx=30,
-    pady=25
-)
+main_frame = tk.Frame(root, bg=CARD, padx=30, pady=25)
+main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-main_frame.place(
-    relx=0.5,
-    rely=0.5,
-    anchor="center"
-)
-
-logo_path = "logo.png"
-
-if os.path.exists(logo_path):
-
-    logo_image = tk.PhotoImage(file=logo_path)
-
-    logo_image = logo_image.subsample(5, 5)
-
-    logo_label = tk.Label(
-        main_frame,
-        image=logo_image,
-        bg=CARD
-    )
-
-    logo_label.pack(pady=(0, 1))
-
-title_label = tk.Label(
-    main_frame,
-    text="YouTube Music Downloader",
-    font=("Segoe UI", 24, "bold"),
-    bg=CARD,
-    fg=TEXT
-)
-
-title_label.pack()
-
-subtitle = tk.Label(
-    main_frame,
-    text="Paste YouTube links and automatically embed custom album art",
-    font=("Segoe UI", 10),
-    bg=CARD,
-    fg=SUBTEXT
-)
-
-subtitle.pack(pady=(0, 20))
-
-url_text = tk.Text(
-    main_frame,
-    width=80,
-    height=16,
-    font=("Consolas", 11),
-    bg=BOX,
-    fg=TEXT,
-    insertbackground=TEXT,
-    relief="flat",
-    padx=15,
-    pady=15
-)
-
+tk.Label(main_frame, text="Music Processor", font=("Segoe UI", 24, "bold"), bg=CARD, fg=TEXT).pack()
+url_text = tk.Text(main_frame, width=50, height=8, bg=BOX, fg=TEXT, insertbackground=TEXT, relief="flat")
 url_text.pack(pady=10)
 
-def create_button(text, command):
+# Buttons
+cover_btn = tk.Button(main_frame, text="1. Select Cover Art", command=select_cover, bg=RED, fg="white", bd=0, padx=20, pady=5)
+cover_btn.pack(pady=5)
+cover_label = tk.Label(main_frame, text="No cover selected", bg=CARD, fg=SUBTEXT)
+cover_label.pack()
 
-    btn = tk.Button(
-        main_frame,
-        text=text,
-        command=command,
-        font=("Segoe UI", 11, "bold"),
-        bg=RED,
-        fg="white",
-        activebackground=HOVER,
-        activeforeground="white",
-        relief="flat",
-        bd=0,
-        padx=25,
-        pady=12,
-        cursor="hand2"
-    )
+local_btn = tk.Button(main_frame, text="2. Add Local Files (MP3/WAV)", command=add_local_files, bg=RED, fg="white", bd=0, padx=20, pady=5)
+local_btn.pack(pady=5)
+files_label = tk.Label(main_frame, text="0 local files queued", bg=CARD, fg=SUBTEXT)
+files_label.pack()
 
-    btn.bind("<Enter>", on_enter)
-    btn.bind("<Leave>", on_leave)
+proc_btn = tk.Button(main_frame, text="3. Process All", command=process_queue, bg=RED, fg="white", bd=0, padx=20, pady=10)
+proc_btn.pack(pady=20)
 
-    return btn
-
-cover_button = create_button(
-    "Select Cover Art",
-    select_cover
-)
-
-cover_button.pack(pady=(15, 8))
-
-cover_label = tk.Label(
-    main_frame,
-    text="No cover selected",
-    font=("Segoe UI", 10),
-    bg=CARD,
-    fg=SUBTEXT
-)
-
-cover_label.pack(pady=(0, 15))
-
-
-# Download Button
-download_button = create_button(
-    "Download All",
-    download_music
-)
-
-download_button.pack(pady=10)
-
-status_label = tk.Label(
-    main_frame,
-    text="",
-    font=("Segoe UI", 10),
-    bg=CARD,
-    fg=TEXT
-)
-
-status_label.pack(pady=(20, 0))
+status_label = tk.Label(main_frame, text="", bg=CARD, fg=TEXT)
+status_label.pack()
 
 root.mainloop()
