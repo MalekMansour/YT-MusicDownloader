@@ -5,15 +5,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from yt_dlp import YoutubeDL
 
-# --------------------------------
-# GLOBALS
-# --------------------------------
-cover_path = ""
-local_files = [] # Added to track local audio files
 
-# --------------------------------
-# FFMPEG PATH
-# --------------------------------
+cover_path = ""
+local_files = [] 
+
 FFMPEG_FOLDER = r'C:\Users\Malek\Downloads\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin'
 FFMPEG_EXE = os.path.join(FFMPEG_FOLDER, "ffmpeg.exe")
 
