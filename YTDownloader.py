@@ -94,7 +94,6 @@ def process_queue():
             info = ydl.extract_info(link, download=False)
             title = clean_filename(info.get("title", "Song"))
             
-        # Enforce single-video mode during download process
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': os.path.join(output_dir, f"{title}.%(ext)s"),
