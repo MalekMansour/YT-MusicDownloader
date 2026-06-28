@@ -119,9 +119,6 @@ def process_queue():
     local_files = []
     files_label.config(text="0 local files queued")
 
-# --------------------------------
-# GUI SETUP
-# --------------------------------
 root = tk.Tk()
 root.title("Music Processor")
 root.geometry("600x700")
