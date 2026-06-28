@@ -12,9 +12,6 @@ local_files = []
 FFMPEG_FOLDER = r'C:\Users\Malek\Downloads\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin'
 FFMPEG_EXE = os.path.join(FFMPEG_FOLDER, "ffmpeg.exe")
 
-# --------------------------------
-# COLORS & STYLING (Same as yours)
-# --------------------------------
 BG = "#120707"
 CARD = "#1b0b0b"
 RED = "#8b0000"
@@ -23,9 +20,6 @@ TEXT = "#ffffff"
 SUBTEXT = "#c9b3b3"
 BOX = "#2a1111"
 
-# --------------------------------
-# HELPERS
-# --------------------------------
 def clean_filename(name):
     name = re.sub(r'[\[\]\(\)\{\}]', '', name)
     name = re.sub(r'[^a-zA-Z0-9\s-]', '', name)
