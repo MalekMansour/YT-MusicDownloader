@@ -1,6 +1,6 @@
-# YouTube Music Downloader
+# YTDownloader
 
-A Python desktop application that downloads YouTube audio as high-quality MP3 files and automatically embeds custom album cover art using FFmpeg.
+A Python desktop app that downloads YouTube audio as MP3 files and embeds album cover art. It can also add cover art to audio files you already have on your computer.
 
 Built with:
 
@@ -8,129 +8,183 @@ Built with:
 * Tkinter
 * yt-dlp
 * FFmpeg
+* Pillow (optional, for cover previews and square cropping)
 
 ---
 
-# Features
+## Features
 
-* Download audio from YouTube links
-* Convert audio to MP3 format
-* Automatically clean song filenames
-* Embed custom album art into MP3 files
-* Modern dark-red themed GUI
-* Supports downloading multiple songs at once
+* Download audio from one or many YouTube links at once
+* Convert everything to MP3
+* Embed your own cover art, or use each video's thumbnail automatically
+* Add cover art to your own audio files (MP3, WAV, FLAC, M4A, OGG, OPUS, AAC)
+* Non-MP3 files are converted to 320 kbps MP3 with the cover inside
+* Cover images are cropped to a clean square so they display properly in music players
+* Song title and uploader are written into the file's tags
+* Clean, safe filenames
+* Live progress bar and a log that shows exactly what worked and what failed
+* Failed links stay in the box after a run, so retrying is one click
+* Choose your own save folder and open it straight from the app
+* The window stays responsive while downloading
+* Black and dark purple interface
 
 ---
 
-# Requirements
+## Requirements
 
-Install Python packages:
+* Python 3.10 or newer
+* FFmpeg
+* Deno (YouTube now requires a JavaScript runtime for downloads)
+
+### 1. Install the Python packages
 
 ```bash
-pip install yt-dlp
+pip install -U "yt-dlp[default]" pillow
 ```
 
-You also need:
+Pillow is optional. Without it the app still works, but there's no cover preview and no automatic square crop.
 
-* FFmpeg installed
-* Python 3.10+
+### 2. Install Deno
+
+On Windows:
+
+```bash
+winget install DenoLand.Deno
+```
+
+On macOS:
+
+```bash
+brew install deno
+```
+
+Restart your terminal (or your computer) after installing so the app can find it.
+
+### 3. Install FFmpeg
+
+On Windows you can use:
+
+```bash
+winget install Gyan.FFmpeg
+```
+
+Or download a build manually and extract it anywhere.
 
 ---
 
-# FFmpeg Setup
+## FFmpeg Setup
 
-Download FFmpeg and extract it somewhere on your computer.
+The app finds FFmpeg in this order:
 
-Update this line in the script:
+1. The folder set in `DEFAULT_FFMPEG_FOLDER` at the top of the script
+2. FFmpeg on your system PATH
+3. Any folder you pick with the **Locate** button inside the app
+
+If you'd like to set the path in the script, update this line:
 
 ```python
-FFMPEG_FOLDER = r'C:\Path\To\ffmpeg\bin'
+DEFAULT_FFMPEG_FOLDER = r"C:\Path\To\ffmpeg\bin"
 ```
 
-Make sure the folder contains:
+The folder should contain `ffmpeg.exe` (and `ffprobe.exe`).
 
-```text
-ffmpeg.exe
+The "Save to" panel shows a green dot when FFmpeg and Deno are found, and a warning when they're missing.
+
+---
+
+## Running the App
+
+```bash
+python YTDownloader.py
 ```
 
 ---
 
-# How It Works
+## How It Works
 
-## 1. Paste YouTube Links
+### 1. Paste YouTube links
 
-The textbox allows you to paste one or multiple YouTube URLs.
-
-Each link should be on its own line.
-
-Example:
+Paste one or more YouTube URLs into the links box, one per line. You can also use the **Paste** button.
 
 ```text
 https://youtube.com/watch?v=example1
 https://youtube.com/watch?v=example2
 ```
 
----
+Playlist links download only the single video, not the whole playlist.
 
-## 2. Select Cover Art
+### 2. Add your own audio files (optional)
 
-Click:
+Click **Add files** to queue audio from your computer. You can remove selected files or clear the list at any time.
 
-```text
-Select Cover Art
-```
+### 3. Choose cover art (optional for YouTube)
 
-Choose an image file:
+Click **Choose image** and pick a JPG, PNG, WEBP or BMP file.
 
-* JPG
-* PNG
-* WEBP
-* BMP
+* If you choose an image, it gets embedded into every track.
+* If you leave it empty, each YouTube download uses its own video thumbnail.
+* Your own audio files always need a cover image.
 
-This image will be embedded into every downloaded MP3 file.
+### 4. Pick where to save
 
----
-
-## 3. Download Songs
-
-Click:
+By default, files go to:
 
 ```text
-Download All
+Downloads/YTDownloader
 ```
 
-The program will:
+Click **Change folder** to save somewhere else.
 
-1. Download the best audio quality
-2. Convert audio to MP3
-3. Rename the file safely
-4. Embed the selected album art
-5. Save everything into:
+### 5. Press Start
 
-```text
-Downloads/Downloaded Music
+For each YouTube link, the app will:
+
+1. Download the best available audio
+2. Convert it to MP3
+3. Add title and uploader tags
+4. Embed the cover art
+5. Save it with a clean filename
+
+For each local file, it embeds the cover and saves a new MP3 copy in your output folder. Your original files are never changed.
+
+When it's done, the app shows a summary and offers to open the folder.
+
+---
+
+## Troubleshooting
+
+**Every YouTube link fails**
+Update yt-dlp and make sure Deno is installed, then restart the app.
+
+```bash
+pip install -U "yt-dlp[default]"
 ```
 
----
+YouTube changes often, so updating yt-dlp fixes most problems.
 
-# GUI Design
+**"FFmpeg not found"**
+Click **Locate** and choose the folder that contains `ffmpeg.exe`.
 
-The application uses a custom dark-red theme with:
+**No cover preview**
+Install Pillow with `pip install pillow`.
 
-* hover button effects
-* modern typography
-* centered card layout
-* responsive resizing
-
----
-
-# Notes
-
-* Internet connection is required
-* Some videos may not be downloadable due to restrictions
-* FFmpeg must be correctly configured
+**Some videos won't download**
+Age-restricted, private or region-locked videos may not be available.
 
 ---
 
-# Author
+## A Note on Audio Quality
+
+YouTube's best audio is usually around 128 to 160 kbps. Files are saved at 320 kbps so nothing is lost in conversion, but this makes files bigger without making them sound better. To save space, change `"320"` to `"192"` in the `_download_one` function.
+
+---
+
+## Disclaimer
+
+This project is for personal use. Only download content you have the right to download, and respect YouTube's Terms of Service and the rights of creators.
+
+---
+
+## Author
+
 Made by Malek Mansour
