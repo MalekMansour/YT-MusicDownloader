@@ -45,6 +45,12 @@ IS_WINDOWS = os.name == "nt"
 FFMPEG_NAME = "ffmpeg.exe" if IS_WINDOWS else "ffmpeg"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
+# The logo sits next to the script. sys._MEIPASS covers the case where
+# the app is bundled into an .exe with PyInstaller.
+APP_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+LOGO_FILE = os.path.join(APP_DIR, "logo.png")
+LOGO_SIZE = 46  # height in pixels next to the title
+
 AUDIO_TYPES = "*.mp3 *.wav *.flac *.m4a *.ogg *.opus *.aac"
 IMAGE_TYPES = "*.jpg *.jpeg *.png *.webp *.bmp"
 
@@ -155,6 +161,25 @@ def embed_cover(input_file, cover, output_file, ffmpeg_exe):
     return output_file
 
 
+def load_logo(size):
+    """Load logo.png scaled to the given height. Returns None if it's missing or broken."""
+    if not os.path.isfile(LOGO_FILE):
+        return None
+    try:
+        if HAS_PIL:
+            img = Image.open(LOGO_FILE).convert("RGBA")
+            w, h = img.size
+            new_w = max(1, round(w * size / h))
+            img = img.resize((new_w, size), Image.LANCZOS)
+            return ImageTk.PhotoImage(img)
+        # Without Pillow, Tk can still read PNGs but only shrink by whole steps
+        img = tk.PhotoImage(file=LOGO_FILE)
+        step = max(1, img.height() // size)
+        return img.subsample(step, step)
+    except Exception:
+        return None
+
+
 def open_folder(path):
     if IS_WINDOWS:
         os.startfile(path)
@@ -235,6 +260,12 @@ class YTDownloader:
         root.minsize(900, 740)
         root.configure(bg=BG)
 
+        # Keep references to the images, or Tkinter throws them away and they go blank
+        self.logo_small = load_logo(LOGO_SIZE)
+        self.logo_icon = load_logo(64)
+        if self.logo_icon:
+            root.iconphoto(True, self.logo_icon)  # title bar and taskbar icon
+
         self._setup_styles()
         self._build_ui()
         self._startup_checks()
@@ -268,6 +299,8 @@ class YTDownloader:
         header.pack(fill="x")
         title_row = tk.Frame(header, bg=BG)
         title_row.pack(anchor="w")
+        if self.logo_small:
+            tk.Label(title_row, image=self.logo_small, bg=BG).pack(side="left", padx=(0, 12))
         tk.Label(title_row, text="YTDownloader", bg=BG, fg=TEXT,
                  font=(FONT, 30, "bold")).pack(side="left")
         tk.Frame(header, bg=PURPLE, height=3).pack(fill="x", pady=(8, 6))
