@@ -708,12 +708,19 @@ class YTDownloader:
         self.log("Updating yt-dlp, this takes a few seconds...", "dim")
 
         def work():
-            cmd = [sys.executable, "-m", "pip", "install", "-U", "yt-dlp[default]"]
+            base = [sys.executable, "-m", "pip", "install", "-U", "yt-dlp[default]"]
             try:
-                r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                r = subprocess.run(base, capture_output=True, text=True, encoding="utf-8",
                                    errors="replace", creationflags=NO_WINDOW)
+                out = (r.stderr or "") + (r.stdout or "")
+                if r.returncode != 0 and ("Access is denied" in out or "Permission" in out):
+                    # Python lives in a protected folder (like C:\Python312), so install
+                    # for this Windows user instead. No admin rights needed.
+                    r = subprocess.run(base + ["--user"], capture_output=True, text=True,
+                                       encoding="utf-8", errors="replace", creationflags=NO_WINDOW)
+                    out = (r.stderr or "") + (r.stdout or "")
                 ok = r.returncode == 0
-                detail = "" if ok else short_error(r.stderr or r.stdout)
+                detail = "" if ok else short_error(out)
             except Exception as e:
                 ok, detail = False, short_error(e)
             self.post("updated", ok, detail)
