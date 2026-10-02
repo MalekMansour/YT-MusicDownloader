@@ -256,8 +256,10 @@ class YTDownloader:
         self.q = queue.Queue()
 
         root.title("YTDownloader")
-        root.geometry("1000x800")
-        root.minsize(900, 740)
+        screen_h = root.winfo_screenheight()
+        height = min(800, screen_h - 90)
+        root.geometry(f"1000x{height}+{(root.winfo_screenwidth() - 1000) // 2}+20")
+        root.minsize(860, 560)
         root.configure(bg=BG)
 
         # Keep references to the images, or Tkinter throws them away and they go blank
@@ -322,11 +324,11 @@ class YTDownloader:
 
         # Footer: start button, progress, log
         footer = tk.Frame(page, bg=BG)
-        footer.pack(fill="x", pady=(16, 0))
+        footer.pack(side="bottom", fill="x", pady=(16, 0), before=body)
 
         action_row = tk.Frame(footer, bg=BG)
         action_row.pack(fill="x")
-        self.start_btn = FlatButton(action_row, "Start", self.start, primary=True, big=True)
+        self.start_btn = FlatButton(action_row, "Download all", self.start, primary=True, big=True)
         self.start_btn.pack(side="left")
 
         prog_box = tk.Frame(action_row, bg=BG)
@@ -342,7 +344,7 @@ class YTDownloader:
         log_outer.pack(fill="x", pady=(14, 0))
         log_inner = tk.Frame(log_outer, bg=INPUT)
         log_inner.pack(fill="both", expand=True, padx=1, pady=1)
-        self.log_box = tk.Text(log_inner, height=7, bg=INPUT, fg=SUBTEXT, font=(MONO, 9),
+        self.log_box = tk.Text(log_inner, height=5, bg=INPUT, fg=SUBTEXT, font=(MONO, 9),
                                relief="flat", bd=0, padx=12, pady=10, wrap="word",
                                state="disabled", cursor="arrow")
         log_scroll = ttk.Scrollbar(log_inner, orient="vertical", command=self.log_box.yview,
@@ -588,7 +590,7 @@ class YTDownloader:
         self.ffmpeg_label.config(text="FFmpeg found" if found else "FFmpeg not found")
 
     def _startup_checks(self):
-        self.log("Ready. Add links or files, pick a cover, then press Start.", "dim")
+        self.log("Ready. Add links or files, pick a cover, then press Download all.", "dim")
         if not HAS_YTDLP:
             self.log('yt-dlp is not installed. Run: pip install -U "yt-dlp[default]"', "err")
         if not self.ffmpeg_dir:
@@ -770,7 +772,7 @@ class YTDownloader:
     def _finish(self, ok, failed_links, total):
         self.running = False
         self.start_btn.set_enabled(True)
-        self.start_btn.config(text="Start")
+        self.start_btn.config(text="Download all")
         self.progress_var.set(100)
 
         failed = total - ok
