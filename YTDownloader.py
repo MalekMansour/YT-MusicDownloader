@@ -630,8 +630,6 @@ class YTDownloader:
         n = len(self.local_files)
         self.files_count.config(text="none added" if n == 0 else f"{n} file{'s' if n != 1 else ''}")
 
-    # ---------- cover ----------
-
     def _draw_empty_cover(self):
         c, s = self.cover_canvas, self.cover_side
         c.delete("all")
@@ -668,8 +666,6 @@ class YTDownloader:
         self.cover_preview = None
         self.cover_name.config(text="No image chosen")
         self._draw_empty_cover()
-
-    # ---------- output / ffmpeg ----------
 
     def _change_output(self):
         d = filedialog.askdirectory(title="Choose where to save", initialdir=self.output_dir)
@@ -746,8 +742,6 @@ class YTDownloader:
             self.log("Pillow is not installed, so there's no cover preview or auto square crop. "
                      "Run: pip install pillow", "warn")
 
-    # ---------- log / status (main thread only) ----------
-
     def log(self, text, tag="info"):
         self.log_box.config(state="normal")
         self.log_box.insert("end", text + "\n", tag)
@@ -785,8 +779,6 @@ class YTDownloader:
         except queue.Empty:
             pass
         self.root.after(80, self._poll)
-
-    # ---------- run ----------
 
     def start(self):
         if self.running:
