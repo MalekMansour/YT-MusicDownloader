@@ -38,8 +38,12 @@ except ImportError:
     HAS_PIL = False
 
 
+# ----------------------------------------------------------------------------
 # Settings
+# ----------------------------------------------------------------------------
 
+# Your old FFmpeg folder. If it isn't there, the app falls back to FFmpeg on PATH,
+# and you can also point it somewhere else with the "Locate" button.
 DEFAULT_FFMPEG_FOLDER = r"C:\Users\Malek\Downloads\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin"
 DEFAULT_OUTPUT = os.path.join(os.path.expanduser("~"), "Downloads", "YTDownloader")
 
@@ -47,6 +51,8 @@ IS_WINDOWS = os.name == "nt"
 FFMPEG_NAME = "ffmpeg.exe" if IS_WINDOWS else "ffmpeg"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
+# The logo sits next to the script. sys._MEIPASS covers the case where
+# the app is bundled into an .exe with PyInstaller.
 APP_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 LOGO_FILE = os.path.join(APP_DIR, "logo.png")
 LOGO_SIZE = 40  # height next to the title (before screen scaling)
@@ -54,7 +60,9 @@ LOGO_SIZE = 40  # height next to the title (before screen scaling)
 AUDIO_TYPES = "*.mp3 *.wav *.flac *.m4a *.ogg *.opus *.aac"
 IMAGE_TYPES = "*.jpg *.jpeg *.png *.webp *.bmp"
 
-# Color
+# ----------------------------------------------------------------------------
+# Palette: black and dark purple
+# ----------------------------------------------------------------------------
 
 BG = "#000000"
 CARD = "#0d0a12"
@@ -75,6 +83,14 @@ WARN = "#f0c46c"
 
 FONT = "Segoe UI" if IS_WINDOWS else "Helvetica"
 MONO = "Consolas" if IS_WINDOWS else "Courier"
+
+
+# ----------------------------------------------------------------------------
+# Screen scaling
+# Windows scales text up on high-res screens (125%, 150%...). Fonts grow with it,
+# so every pixel size (padding, boxes, the logo) has to grow by the same amount,
+# otherwise text overflows its space and gets cut off. px() does that.
+# ----------------------------------------------------------------------------
 
 SCALE = 1.0
 
@@ -97,7 +113,9 @@ def px(n):
     return max(1, int(round(n * SCALE)))
 
 
+# ----------------------------------------------------------------------------
 # Helpers (no UI in here, safe to call from the worker thread)
+# ----------------------------------------------------------------------------
 
 def clean_filename(name):
     name = re.sub(r"[\[\]\(\)\{\}]", "", name)
